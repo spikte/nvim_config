@@ -37,16 +37,13 @@ vim.api.nvim_create_autocmd("BufWritePre", {
         vim.fn.winrestview(view)
     end,
 })
+-- Next buffer
+keymap("n", "<leader>o", ":bn<CR>")
 
 
 -- Visual --
 --Align tabular data
 keymap("v", "<leader><tab>", ":'<,'>!column -t <CR>", opts)
-
-
--- Visual Block --
-
-
 -- Terminal mode --
 keymap("t", ",<Esc>", "<C-\\><C-N>", opts)
 
@@ -109,10 +106,7 @@ local function alt_file_open()
 
     local candidates = {}
 
-    -- 1. Same directory
     table.insert(candidates, dir .. '/' .. stem .. '.' .. alt_ext)
-
-    -- 2. /src/ <-> /include/ swap
     local swapped_path
     if path:match('/src/') then
         swapped_path = path:gsub('/src/', '/include/', 1)
@@ -141,14 +135,22 @@ vim.api.nvim_create_autocmd('FileType', {
         keymap('n', 'vaf', '[{V]}')
         --keymap('n', '<leader>p', ':%!clang-format<CR>')
         keymap('n', '<leader>h', alt_file_open)
+        keymap('n', '<leader>p', function()
+            vim.lsp.buf.format({
+                async = true,
+                filter = function(client)
+                    return client.name == 'clangd'
+                end,
+            })
+        end)
     end
 })
-vim.keymap.set('n', '<leader>p', function()
-    vim.lsp.buf.format({
-        async = true,
-        filter = function(client)
-            return client.name == 'clangd'
-        end,
-    })
-end, opts)
 
+vim.api.nvim_create_autocmd('FileType', {
+    pattern = { 'go' },
+    callback = function()
+        keymap('n', '<leader>p', function()
+            vim.lsp.buf.format({ async = true })
+        end)
+    end,
+})
